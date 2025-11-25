@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "24464:8000"
+    volumes:
+      - ./config:/config
+    env_file:
+      - .env

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Reactarr</Name>
+  <Repository>reactarr/reactarr</Repository>
+  <Registry>https://hub.docker.com/r/reactarr/reactarr/</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/reactarr/reactarr/issues</Support>
+  <Project>https://github.com/reactarr/reactarr</Project>
+  <Overview>
+    An IFTTT-style configurator for automations using Sonarr/Radarr.
+    Configure rules to manage your media library automatically.
+  </Overview>
+  <Category>Tools:</Category>
+  <WebUI>http://[IP]:[PORT:24464]</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/reactarr/reactarr/main/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1608266400</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="8000" Default="24464" Mode="tcp" Description="Port for the Web UI" Type="Port" Display="always" Required="true"/>
+  <Config Name="Config Path" Target="/config" Default="/mnt/user/appdata/reactarr" Mode="rw" Description="Path to store the configuration file" Type="Path" Display="always" Required="true"/>
+  <Config Name="Sonarr URL" Target="SONARR_URL" Default="" Description="Your Sonarr URL" Type="Variable" Display="always" Required="false"/>
+  <Config Name="Sonarr API Key" Target="SONARR_API_KEY" Default="" Description="Your Sonarr API Key" Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Radarr URL" Target="RADARR_URL" Default="" Description="Your Radarr URL" Type="Variable" Display="always" Required="false"/>
+  <Config Name="Radarr API Key" Target="RADARR_API_KEY" Default="" Description="Your Radarr API Key" Type="Variable" Display="always" Required="false" Mask="true"/>
+</Container>
