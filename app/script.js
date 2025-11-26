@@ -4,6 +4,8 @@ const statusEl = document.getElementById('status');
 const qualityProfileEl = document.getElementById('quality-profile');
 const tagEl = document.getElementById('tag');
 const actionEl = document.getElementById('action');
+const actionValueGroupEl = document.getElementById('action-value-group');
+const actionValueEl = document.getElementById('action-value');
 const rulesListEl = document.getElementById('rules');
 const previewCardEl = document.getElementById('preview-card');
 const previewResultsEl = document.getElementById('preview-results');
@@ -16,6 +18,7 @@ async function addRule() {
     qualityProfile: qualityProfileEl.value,
     tag: tagEl.value,
     action: actionEl.value,
+    actionValue: actionValueEl.value,
   };
 
   await fetch('/api/rules', {
@@ -35,6 +38,7 @@ async function previewRule() {
     qualityProfile: qualityProfileEl.value,
     tag: tagEl.value,
     action: actionEl.value,
+    actionValue: actionValueEl.value,
   };
 
   const response = await fetch('/api/rules/preview', {
@@ -147,7 +151,106 @@ mediaTypeEl.addEventListener('change', () => {
 
 eventTypeEl.addEventListener('change', updateStatusOptions);
 
+actionEl.addEventListener('change', () => {
+  const action = actionEl.value;
+  if (action === 'add_tag' || action === 'remove_tag' || action === 'change_quality_profile') {
+    actionValueGroupEl.style.display = 'block';
+    if (action === 'change_quality_profile') {
+      populateActionValueDropdown('quality_profiles');
+    } else {
+      populateActionValueDropdown('tags');
+    }
+  } else {
+    actionValueGroupEl.style.display = 'none';
+  }
+});
+
+async function populateActionValueDropdown(dataType) {
+  const mediaType = mediaTypeEl.value === 'episode' ? 'sonarr' : 'radarr';
+  const response = await fetch(`/api/${mediaType}/data`);
+  const data = await response.json();
+  actionValueEl.innerHTML = '';
+  if (data[dataType]) {
+    for (const item of data[dataType]) {
+      const option = document.createElement('option');
+      option.value = item.name || item.label;
+      option.textContent = item.name || item.label;
+      actionValueEl.appendChild(option);
+    }
+  }
+}
+
 // Initial setup
 updateStatusOptions();
 fetchData('sonarr');
 fetchRules();
+fetchSonarrLibrary();
+fetchRadarrLibrary();
+fetchSonarrWanted();
+fetchRadarrWanted();
+
+async function fetchAndRender(url, listElId, noItemsMessage, itemRenderer) {
+    const response = await fetch(url);
+    const data = await response.json();
+    const listEl = document.getElementById(listElId);
+    listEl.innerHTML = '';
+    const items = data.records || data;
+    if (items.length === 0) {
+        listEl.innerHTML = `<li class="list-group-item">${noItemsMessage}</li>`;
+        return;
+    }
+    for (const item of items) {
+        listEl.appendChild(itemRenderer(item));
+    }
+}
+
+function renderLibraryItem(item) {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.textContent = item.title;
+    return li;
+}
+
+function renderWantedItem(item, searchFn, idKey) {
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.textContent = item.title;
+    const searchButton = document.createElement('button');
+    searchButton.className = 'btn btn-primary btn-sm';
+    searchButton.textContent = 'Search';
+    searchButton.onclick = () => searchFn(item[idKey]);
+    li.appendChild(searchButton);
+    return li;
+}
+
+async function fetchSonarrLibrary() {
+    fetchAndRender('/api/sonarr/library', 'sonarr-library', 'No items in library.', renderLibraryItem);
+}
+
+async function fetchRadarrLibrary() {
+    fetchAndRender('/api/radarr/library', 'radarr-library', 'No items in library.', renderLibraryItem);
+}
+
+async function fetchSonarrWanted() {
+    fetchAndRender('/api/sonarr/wanted', 'sonarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchSonarr, 'seriesId'));
+}
+
+async function fetchRadarrWanted() {
+    fetchAndRender('/api/radarr/wanted', 'radarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchRadarr, 'movieId'));
+}
+
+async function searchSonarr(seriesId) {
+  await fetch('/api/sonarr/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seriesId }),
+  });
+}
+
+async function searchRadarr(movieId) {
+  await fetch('/api/radarr/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ movieId }),
+  });
+}
