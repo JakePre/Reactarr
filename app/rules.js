@@ -8,6 +8,7 @@ const audioCodecEl = document.getElementById('audio-codec');
 const resolutionEl = document.getElementById('resolution');
 const minSizeEl = document.getElementById('min-size');
 const maxSizeEl = document.getElementById('max-size');
+const intervalEl = document.getElementById('interval');
 const actionEl = document.getElementById('action');
 const actionValueGroupEl = document.getElementById('action-value-group');
 const actionValueEl = document.getElementById('action-value');
@@ -27,6 +28,7 @@ async function addRule() {
     resolution: resolutionEl.value,
     minSize: minSizeEl.value,
     maxSize: maxSizeEl.value,
+    interval: intervalEl.value,
     action: actionEl.value,
     actionValue: actionValueEl.value,
   };
@@ -104,6 +106,9 @@ async function fetchRules() {
     }
     if (rule.maxSize) {
       ruleText += ` and max size is ${rule.maxSize}MB`;
+    }
+    if (rule.interval) {
+      ruleText += ` (Runs every ${rule.interval} mins)`;
     }
     ruleText += ` then ${rule.action}`;
     li.textContent = ruleText;

@@ -176,25 +176,6 @@ def delete_sonarr_episode(item_id):
     api_key = os.environ.get('SONARR_API_KEY')
     if not url or not api_key:
         return
-    try:
-        requests.delete(f"{url}/api/v3/queue/{item_id}", headers={'X-Api-Key': api_key}, params={'removeFromClient': 'true', 'blocklist': 'true'})
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error deleting Sonarr episode: {e}")
-
-def run_automations():
-    while True:
-        logging.info("Running automations...")
-        for rule in RULES:
-            if rule['mediaType'] == 'episode':
-                handle_sonarr_rule(rule)
-            elif rule['mediaType'] == 'movie':
-                handle_radarr_rule(rule)
-        time.sleep(60)
-
-def handle_radarr_rule(rule, dry_run=False):
-    items = []
-    if rule['eventType'] in ['grabbed', 'downloaded', 'imported', 'failed']:
-        items = (radarr_api_request('queue') or {}).get('records', [])
     elif rule['eventType'] == 'missing':
         items = (radarr_api_request('wanted/missing') or {}).get('records', [])
     elif rule['eventType'] == 'unmonitored':
