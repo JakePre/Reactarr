@@ -118,155 +118,43 @@
     </div>
 
     <div class="card mb-4" id="preview-card" style="display: none;">
-      <!DOCTYPE html>
-      <html>
+      <div class="card-body">
+        <h2 class="card-title">Rule Preview</h2>
+        <ul id="preview-results" class="list-group"></ul>
+      </div>
+    </div>
 
-      <head>
-        <title>Reactarr</title>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-        <style>
-          body {
-            padding-top: 20px;
-          }
-        </style>
-      </head>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="card-title">Existing Rules</h2>
+        <ul id="rules" class="list-group"></ul>
+      </div>
+    </div>
 
-      <body>
-        <div class="container">
-          <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-            <a class="navbar-brand" href="/">Reactarr</a>
-            <div class="collapse navbar-collapse">
-              <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                  <a class="nav-link" href="/">Rules</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/explorer">Explorer</a>
-                </li>
-              </ul>
-            </div>
-          </nav>
-
-          <h1 class="mb-4">Reactarr</h1>
-
-          <div class="card mb-4">
-            <div class="card-body">
-              <h2 class="card-title">Create a New Rule</h2>
-              <div class="form-row">
-                <div class="form-group col-md-2">
-                  <label for="media-type">If Media Is</label>
-                  <select id="media-type" class="form-control">
-                    <option value="episode">Episode</option>
-                    <option value="movie">Movie</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="event-type">And Event Is</label>
-                  <select id="event-type" class="form-control">
-                    <option value="grabbed">Grabbed (Sent to download client)</option>
-                    <option value="downloaded">Downloaded (Finished downloading)</option>
-                    <option value="imported">Imported (Added to library)</option>
-                    <option value="failed">Failed (Download failed)</option>
-                    <option value="missing">Missing (Episode is missing from disk)</option>
-                    <option value="unmonitored">Unmonitored (No longer being monitored)</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group col-md-3">
-                  <label for="status">And Status Is</label>
-                  <select id="status" class="form-control">
-                    <option value="waiting_for_import">Waiting for Import</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="quality-profile">And Quality Is</label>
-                  <select id="quality-profile" class="form-control">
-                    <option value="">Any</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="tag">And Tag Is</label>
-                  <select id="tag" class="form-control">
-                    <option value="">Any</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="video-codec">Video Codec</label>
-                  <input type="text" class="form-control" id="video-codec" placeholder="e.g. h264">
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="audio-codec">Audio Codec</label>
-                  <input type="text" class="form-control" id="audio-codec" placeholder="e.g. ac3">
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="resolution">Resolution</label>
-                  <input type="text" class="form-control" id="resolution" placeholder="e.g. 1080">
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="min-size">Min Size (MB)</label>
-                  <input type="number" class="form-control" id="min-size" placeholder="MB">
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="max-size">Max Size (MB)</label>
-                  <input type="number" class="form-control" id="max-size" placeholder="MB">
-                </div>
-                <div class="form-group col-md-2">
-                  <label for="action">Then Action Is</label>
-                  <select id="action" class="form-control">
-                    <option value="delete">Delete</option>
-                    <option value="notify">Notify</option>
-                    <option value="add_tag">Add Tag</option>
-                    <option value="remove_tag">Remove Tag</option>
-                    <option value="change_quality_profile">Change Quality Profile</option>
-                    <option value="monitor">Monitor</option>
-                    <option value="unmonitor">Unmonitor</option>
-                    <option value="search">Search</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-2" id="action-value-group" style="display: none;">
-                  <label for="action-value">Value</label>
-                  <select id="action-value" class="form-control"></select>
-                </div>
-                <div class="form-group col-md-3 align-self-end">
-                  <button class="btn btn-primary btn-block" onclick="addRule()">Add Rule</button>
-                  <button class="btn btn-secondary btn-block mt-2" onclick="previewRule()">Preview Rule</button>
-                </div>
-              </div>
-            </div>
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Sonarr Wanted</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchSonarrWanted()">Refresh</button>
+            <ul id="sonarr-wanted" class="list-group"></ul>
           </div>
-
-          <div class="card mb-4" id="preview-card" style="display: none;">
-            <div class="card-body">
-              <h2 class="card-title">Rule Preview</h2>
-              <ul id="preview-results" class="list-group"></ul>
-            </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Radarr Wanted</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchRadarrWanted()">Refresh</button>
+            <ul id="radarr-wanted" class="list-group"></ul>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <div class="row mt-4">
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-body">
-                  <h2 class="card-title">Sonarr Wanted</h2>
-                  <button class="btn btn-primary mb-2" onclick="fetchSonarrWanted()">Refresh</button>
-                  <ul id="sonarr-wanted" class="list-group"></ul>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-body">
-                  <h2 class="card-title">Radarr Wanted</h2>
-                  <button class="btn btn-primary mb-2" onclick="fetchRadarrWanted()">Refresh</button>
-                  <ul id="radarr-wanted" class="list-group"></ul>
-                </div>
-              </div>
-            </div>
-          </div>
+  <script src="api.js"></script>
+  <script src="rules.js"></script>
+</body>
 
-          <script src="api.js"></script>
-          <script src="rules.js"></script>
-      </body>
-
-      </html>
+</html>
