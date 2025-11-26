@@ -8,6 +8,39 @@ const maxSizeEl = document.getElementById('max-size');
 const tableBodyEl = document.querySelector('#results-table tbody');
 
 let currentItems = [];
+let sonarrMetadata = { qualityProfiles: {}, tags: {} };
+let radarrMetadata = { qualityProfiles: {}, tags: {} };
+
+async function fetchMetadata() {
+    try {
+        const [sonarrRes, radarrRes] = await Promise.all([
+            fetch('/api/sonarr/data'),
+            fetch('/api/radarr/data')
+        ]);
+
+        const sonarrData = await sonarrRes.json();
+        const radarrData = await radarrRes.json();
+
+        console.log("Sonarr Data:", sonarrData);
+        console.log("Radarr Data:", radarrData);
+
+        if (sonarrData.quality_profiles) {
+            sonarrData.quality_profiles.forEach(p => sonarrMetadata.qualityProfiles[p.id] = p.name);
+        }
+        if (sonarrData.tags) {
+            sonarrData.tags.forEach(t => sonarrMetadata.tags[t.id] = t.label);
+        }
+
+        if (radarrData.quality_profiles) {
+            radarrData.quality_profiles.forEach(p => radarrMetadata.qualityProfiles[p.id] = p.name);
+        }
+        if (radarrData.tags) {
+            radarrData.tags.forEach(t => radarrMetadata.tags[t.id] = t.label);
+        }
+    } catch (e) {
+        console.error("Error fetching metadata:", e);
+    }
+}
 
 async function fetchLibrary() {
     const mediaType = mediaTypeEl.value;
@@ -30,23 +63,45 @@ async function fetchLibrary() {
         // Let's implement Radarr first fully.
         // For Sonarr, let's just show Series and maybe note that file info is not available at series level.
 
-        const items = await getSonarrLibrary();
+        const items = await getSonarrLibrary() || [];
         currentItems = items.map(item => ({
             title: item.title,
             videoCodec: 'N/A (Series)',
             audioCodec: 'N/A (Series)',
-            resolution: item.qualityProfileId, // This is ID, not name.
+            resolution: sonarrMetadata.qualityProfiles[item.qualityProfileId] || item.qualityProfileId,
+            quality: sonarrMetadata.qualityProfiles[item.qualityProfileId] || 'Unknown',
+            tags: item.tags.map(id => sonarrMetadata.tags[id] || id).join(', '),
             size: item.statistics ? item.statistics.sizeOnDisk : 0,
             status: item.status,
             raw: item
         }));
+    } else if (mediaType === 'sonarr_episodes') {
+        const items = await getSonarrEpisodes() || [];
+        currentItems = items.map(item => {
+            const file = item.episodeFile;
+            const mediaInfo = file && file.mediaInfo;
+            const quality = file && file.quality && file.quality.quality ? file.quality.quality.name : '';
+            return {
+                title: `${item.seriesTitle} - S${item.seasonNumber}E${item.episodeNumber} - ${item.title}`,
+                videoCodec: mediaInfo ? mediaInfo.videoCodec : '',
+                audioCodec: mediaInfo ? mediaInfo.audioCodec : '',
+                resolution: mediaInfo ? mediaInfo.resolution : '',
+                quality: quality,
+                tags: item.tags ? item.tags.map(id => sonarrMetadata.tags[id] || id).join(', ') : '',
+                size: file ? file.size : 0,
+                status: item.hasFile ? 'Downloaded' : (item.monitored ? 'Missing' : 'Unmonitored'), // Simplified status logic
+                raw: item
+            };
+        });
     } else {
-        const items = await getRadarrLibrary();
+        const items = await getRadarrLibrary() || [];
         currentItems = items.map(item => ({
             title: item.title,
             videoCodec: item.movieFile && item.movieFile.mediaInfo ? item.movieFile.mediaInfo.videoCodec : '',
             audioCodec: item.movieFile && item.movieFile.mediaInfo ? item.movieFile.mediaInfo.audioCodec : '',
             resolution: item.movieFile && item.movieFile.mediaInfo ? item.movieFile.mediaInfo.resolution : '',
+            quality: item.movieFile && item.movieFile.quality && item.movieFile.quality.quality ? item.movieFile.quality.quality.name : (radarrMetadata.qualityProfiles[item.qualityProfileId] || ''),
+            tags: item.tags.map(id => radarrMetadata.tags[id] || id).join(', '),
             size: item.sizeOnDisk,
             status: item.status,
             raw: item
@@ -71,6 +126,8 @@ function renderTable(items) {
             <td>${item.videoCodec || '-'}</td>
             <td>${item.audioCodec || '-'}</td>
             <td>${item.resolution || '-'}</td>
+            <td>${item.quality || '-'}</td>
+            <td>${item.tags || '-'}</td>
             <td>${sizeMB}</td>
             <td>${item.status}</td>
         `;
@@ -105,4 +162,4 @@ function applyFilters() {
 mediaTypeEl.addEventListener('change', fetchLibrary);
 
 // Initial load
-fetchLibrary();
+fetchMetadata().then(fetchLibrary);

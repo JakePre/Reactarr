@@ -101,6 +101,36 @@ def sonarr_wanted():
     wanted = sonarr_api_request('wanted/missing')
     return jsonify(wanted)
 
+@app.route('/api/sonarr/episodes', methods=['GET'])
+def sonarr_episodes():
+    # Fetch all series
+    series_list = sonarr_api_request('series') or []
+    all_episodes = []
+    
+    # This might be slow for large libraries, but it's what was requested
+    for series in series_list:
+        series_id = series['id']
+        episodes = sonarr_api_request(f'episode?seriesId={series_id}') or []
+        episode_files = sonarr_api_request(f'episodefile?seriesId={series_id}') or []
+        
+        # Create a map of episodeFileId -> episodeFile
+        file_map = {f['id']: f for f in episode_files}
+        
+        for ep in episodes:
+            # Enrich with series title for display
+            ep['seriesTitle'] = series['title']
+            
+            # Attach episodeFile if available
+            if 'episodeFileId' in ep and ep['episodeFileId'] in file_map:
+                ep['episodeFile'] = file_map[ep['episodeFileId']]
+
+            # Attach series tags
+            ep['tags'] = series.get('tags', [])
+                
+            all_episodes.append(ep)
+            
+    return jsonify(all_episodes)
+
 @app.route('/api/radarr/wanted', methods=['GET'])
 def radarr_wanted():
     wanted = radarr_api_request('wanted/missing')
@@ -119,6 +149,8 @@ def radarr_search():
     movie_id = data.get('movieId')
     radarr_api_request('command', method='POST', json={'name': 'MoviesSearch', 'movieIds': [movie_id]})
     return jsonify({"status": "success"})
+
+
 
 def api_request(url, api_key, endpoint, method='GET', json=None):
     if not url or not api_key:

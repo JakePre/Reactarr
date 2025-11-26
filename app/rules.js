@@ -212,8 +212,7 @@ async function populateActionValueDropdown(dataType) {
 updateStatusOptions();
 fetchData('sonarr');
 fetchRules();
-fetchSonarrLibrary();
-fetchRadarrLibrary();
+
 fetchSonarrWanted();
 fetchRadarrWanted();
 
@@ -250,13 +249,7 @@ function renderWantedItem(item, searchFn, idKey) {
   return li;
 }
 
-async function fetchSonarrLibrary() {
-  fetchAndRender(getSonarrLibrary, 'sonarr-library', 'No items in library.', renderLibraryItem);
-}
 
-async function fetchRadarrLibrary() {
-  fetchAndRender(getRadarrLibrary, 'radarr-library', 'No items in library.', renderLibraryItem);
-}
 
 async function fetchSonarrWanted() {
   fetchAndRender(getSonarrWanted, 'sonarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchSonarr, 'seriesId'));

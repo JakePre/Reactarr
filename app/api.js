@@ -43,6 +43,11 @@ async function getSonarrLibrary() {
     return await response.json();
 }
 
+async function getSonarrEpisodes() {
+    const response = await fetch('/api/sonarr/episodes');
+    return await response.json();
+}
+
 async function getRadarrLibrary() {
     const response = await fetch('/api/radarr/library');
     return await response.json();
