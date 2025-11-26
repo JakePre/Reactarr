@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Reactarr - Explorer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <a class="navbar-brand" href="/">Reactarr</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Rules</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/explorer">Explorer</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <h1 class="mb-4">Media Explorer</h1>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Filters</h2>
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="media-type">Media Type</label>
+                        <select id="media-type" class="form-control">
+                            <option value="sonarr">Sonarr (Series)</option>
+                            <option value="radarr">Radarr (Movies)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="title-filter">Title</label>
+                        <input type="text" class="form-control" id="title-filter" placeholder="Filter by title...">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="video-codec">Video Codec</label>
+                        <input type="text" class="form-control" id="video-codec" placeholder="e.g. h264">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="audio-codec">Audio Codec</label>
+                        <input type="text" class="form-control" id="audio-codec" placeholder="e.g. ac3">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="resolution">Resolution</label>
+                        <input type="text" class="form-control" id="resolution" placeholder="e.g. 1080">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="min-size">Min Size (MB)</label>
+                        <input type="number" class="form-control" id="min-size" placeholder="MB">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="max-size">Max Size (MB)</label>
+                        <input type="number" class="form-control" id="max-size" placeholder="MB">
+                    </div>
+                    <div class="form-group col-md-2 align-self-end">
+                        <button class="btn btn-primary btn-block" onclick="applyFilters()">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Results</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Video Codec</th>
+                                <th>Audio Codec</th>
+                                <th>Resolution</th>
+                                <th>Size (MB)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="explorer.js"></script>
+</body>
+
+</html>

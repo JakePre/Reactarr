@@ -3,6 +3,11 @@ const eventTypeEl = document.getElementById('event-type');
 const statusEl = document.getElementById('status');
 const qualityProfileEl = document.getElementById('quality-profile');
 const tagEl = document.getElementById('tag');
+const videoCodecEl = document.getElementById('video-codec');
+const audioCodecEl = document.getElementById('audio-codec');
+const resolutionEl = document.getElementById('resolution');
+const minSizeEl = document.getElementById('min-size');
+const maxSizeEl = document.getElementById('max-size');
 const actionEl = document.getElementById('action');
 const actionValueGroupEl = document.getElementById('action-value-group');
 const actionValueEl = document.getElementById('action-value');
@@ -17,15 +22,16 @@ async function addRule() {
     status: statusEl.value,
     qualityProfile: qualityProfileEl.value,
     tag: tagEl.value,
+    videoCodec: videoCodecEl.value,
+    audioCodec: audioCodecEl.value,
+    resolution: resolutionEl.value,
+    minSize: minSizeEl.value,
+    maxSize: maxSizeEl.value,
     action: actionEl.value,
     actionValue: actionValueEl.value,
   };
 
-  await fetch('/api/rules', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rule),
-  });
+  await createRule(rule);
 
   fetchRules();
 }
@@ -37,22 +43,22 @@ async function previewRule() {
     status: statusEl.value,
     qualityProfile: qualityProfileEl.value,
     tag: tagEl.value,
+    videoCodec: videoCodecEl.value,
+    audioCodec: audioCodecEl.value,
+    resolution: resolutionEl.value,
+    minSize: minSizeEl.value,
+    maxSize: maxSizeEl.value,
     action: actionEl.value,
     actionValue: actionValueEl.value,
   };
 
-  const response = await fetch('/api/rules/preview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rule),
-  });
-  const data = await response.json();
+  const affectedItems = await previewRuleApi(rule);
 
   previewResultsEl.innerHTML = '';
-  if (data.affected_items.length === 0) {
+  if (affectedItems.length === 0) {
     previewResultsEl.innerHTML = '<li class="list-group-item">No items would be affected by this rule.</li>';
   } else {
-    for (const item of data.affected_items) {
+    for (const item of affectedItems) {
       const li = document.createElement('li');
       li.className = 'list-group-item';
       li.textContent = item.title;
@@ -63,16 +69,15 @@ async function previewRule() {
 }
 
 async function fetchRules() {
-  const response = await fetch('/api/rules');
-  const data = await response.json();
+  const rules = await getRules();
 
   rulesListEl.innerHTML = '';
-  if (data.rules.length === 0) {
+  if (rules.length === 0) {
     rulesListEl.innerHTML = '<li class="list-group-item">No rules yet.</li>';
     return;
   }
 
-  for (const rule of data.rules) {
+  for (const rule of rules) {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     let ruleText = `If ${rule.mediaType} is ${rule.eventType}`;
@@ -84,6 +89,21 @@ async function fetchRules() {
     }
     if (rule.tag) {
       ruleText += ` and tag is ${rule.tag}`;
+    }
+    if (rule.videoCodec) {
+      ruleText += ` and video codec is ${rule.videoCodec}`;
+    }
+    if (rule.audioCodec) {
+      ruleText += ` and audio codec is ${rule.audioCodec}`;
+    }
+    if (rule.resolution) {
+      ruleText += ` and resolution is ${rule.resolution}`;
+    }
+    if (rule.minSize) {
+      ruleText += ` and min size is ${rule.minSize}MB`;
+    }
+    if (rule.maxSize) {
+      ruleText += ` and max size is ${rule.maxSize}MB`;
     }
     ruleText += ` then ${rule.action}`;
     li.textContent = ruleText;
@@ -99,54 +119,58 @@ async function fetchRules() {
 }
 
 async function deleteRule(ruleId) {
-  await fetch(`/api/rules/${ruleId}`, { method: 'DELETE' });
+  await deleteRuleApi(ruleId);
   fetchRules();
 }
 
 async function fetchData(mediaType) {
-    const response = await fetch(`/api/${mediaType}/data`);
-    const data = await response.json();
+  let data;
+  if (mediaType === 'sonarr') {
+    data = await getSonarrData();
+  } else {
+    data = await getRadarrData();
+  }
 
-    qualityProfileEl.innerHTML = '<option value="">Any</option>';
-    tagEl.innerHTML = '<option value="">Any</option>';
+  qualityProfileEl.innerHTML = '<option value="">Any</option>';
+  tagEl.innerHTML = '<option value="">Any</option>';
 
-    if (data.quality_profiles) {
-        for (const profile of data.quality_profiles) {
-            const option = document.createElement('option');
-            option.value = profile.name;
-            option.textContent = profile.name;
-            qualityProfileEl.appendChild(option);
-        }
+  if (data.quality_profiles) {
+    for (const profile of data.quality_profiles) {
+      const option = document.createElement('option');
+      option.value = profile.name;
+      option.textContent = profile.name;
+      qualityProfileEl.appendChild(option);
     }
+  }
 
-    if (data.tags) {
-        for (const tag of data.tags) {
-            const option = document.createElement('option');
-            option.value = tag.label;
-            option.textContent = tag.label;
-            tagEl.appendChild(option);
-        }
+  if (data.tags) {
+    for (const tag of data.tags) {
+      const option = document.createElement('option');
+      option.value = tag.label;
+      option.textContent = tag.label;
+      tagEl.appendChild(option);
     }
+  }
 }
 
 function updateStatusOptions() {
-    const eventType = eventTypeEl.value;
-    statusEl.innerHTML = '';
-    statusEl.disabled = false;
+  const eventType = eventTypeEl.value;
+  statusEl.innerHTML = '';
+  statusEl.disabled = false;
 
-    if (eventType === 'downloaded') {
-        statusEl.innerHTML = `
+  if (eventType === 'downloaded') {
+    statusEl.innerHTML = `
             <option value="waiting_for_import">Waiting for Import</option>
             <option value="completed">Completed</option>
         `;
-    } else {
-        statusEl.disabled = true;
-    }
+  } else {
+    statusEl.disabled = true;
+  }
 }
 
 mediaTypeEl.addEventListener('change', () => {
-    const mediaType = mediaTypeEl.value === 'episode' ? 'sonarr' : 'radarr';
-    fetchData(mediaType);
+  const mediaType = mediaTypeEl.value === 'episode' ? 'sonarr' : 'radarr';
+  fetchData(mediaType);
 });
 
 eventTypeEl.addEventListener('change', updateStatusOptions);
@@ -167,8 +191,12 @@ actionEl.addEventListener('change', () => {
 
 async function populateActionValueDropdown(dataType) {
   const mediaType = mediaTypeEl.value === 'episode' ? 'sonarr' : 'radarr';
-  const response = await fetch(`/api/${mediaType}/data`);
-  const data = await response.json();
+  let data;
+  if (mediaType === 'sonarr') {
+    data = await getSonarrData();
+  } else {
+    data = await getRadarrData();
+  }
   actionValueEl.innerHTML = '';
   if (data[dataType]) {
     for (const item of data[dataType]) {
@@ -189,68 +217,59 @@ fetchRadarrLibrary();
 fetchSonarrWanted();
 fetchRadarrWanted();
 
-async function fetchAndRender(url, listElId, noItemsMessage, itemRenderer) {
-    const response = await fetch(url);
-    const data = await response.json();
-    const listEl = document.getElementById(listElId);
-    listEl.innerHTML = '';
-    const items = data.records || data;
-    if (items.length === 0) {
-        listEl.innerHTML = `<li class="list-group-item">${noItemsMessage}</li>`;
-        return;
-    }
-    for (const item of items) {
-        listEl.appendChild(itemRenderer(item));
-    }
+async function fetchAndRender(fetchFn, listElId, noItemsMessage, itemRenderer) {
+  const data = await fetchFn();
+  const listEl = document.getElementById(listElId);
+  listEl.innerHTML = '';
+  const items = data.records || data;
+  if (items.length === 0) {
+    listEl.innerHTML = `<li class="list-group-item">${noItemsMessage}</li>`;
+    return;
+  }
+  for (const item of items) {
+    listEl.appendChild(itemRenderer(item));
+  }
 }
 
 function renderLibraryItem(item) {
-    const li = document.createElement('li');
-    li.className = 'list-group-item';
-    li.textContent = item.title;
-    return li;
+  const li = document.createElement('li');
+  li.className = 'list-group-item';
+  li.textContent = item.title;
+  return li;
 }
 
 function renderWantedItem(item, searchFn, idKey) {
-    const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-    li.textContent = item.title;
-    const searchButton = document.createElement('button');
-    searchButton.className = 'btn btn-primary btn-sm';
-    searchButton.textContent = 'Search';
-    searchButton.onclick = () => searchFn(item[idKey]);
-    li.appendChild(searchButton);
-    return li;
+  const li = document.createElement('li');
+  li.className = 'list-group-item d-flex justify-content-between align-items-center';
+  li.textContent = item.title;
+  const searchButton = document.createElement('button');
+  searchButton.className = 'btn btn-primary btn-sm';
+  searchButton.textContent = 'Search';
+  searchButton.onclick = () => searchFn(item[idKey]);
+  li.appendChild(searchButton);
+  return li;
 }
 
 async function fetchSonarrLibrary() {
-    fetchAndRender('/api/sonarr/library', 'sonarr-library', 'No items in library.', renderLibraryItem);
+  fetchAndRender(getSonarrLibrary, 'sonarr-library', 'No items in library.', renderLibraryItem);
 }
 
 async function fetchRadarrLibrary() {
-    fetchAndRender('/api/radarr/library', 'radarr-library', 'No items in library.', renderLibraryItem);
+  fetchAndRender(getRadarrLibrary, 'radarr-library', 'No items in library.', renderLibraryItem);
 }
 
 async function fetchSonarrWanted() {
-    fetchAndRender('/api/sonarr/wanted', 'sonarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchSonarr, 'seriesId'));
+  fetchAndRender(getSonarrWanted, 'sonarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchSonarr, 'seriesId'));
 }
 
 async function fetchRadarrWanted() {
-    fetchAndRender('/api/radarr/wanted', 'radarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchRadarr, 'movieId'));
+  fetchAndRender(getRadarrWanted, 'radarr-wanted', 'No wanted items.', (item) => renderWantedItem(item, searchRadarr, 'movieId'));
 }
 
 async function searchSonarr(seriesId) {
-  await fetch('/api/sonarr/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ seriesId }),
-  });
+  await searchSonarrApi(seriesId);
 }
 
 async function searchRadarr(movieId) {
-  await fetch('/api/radarr/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ movieId }),
-  });
+  await searchRadarrApi(movieId);
 }

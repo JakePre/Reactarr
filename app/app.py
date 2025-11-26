@@ -34,6 +34,10 @@ def save_rules():
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/explorer')
+def explorer():
+    return send_from_directory('.', 'explorer.html')
+
 @app.route('/api/rules', methods=['GET', 'POST'])
 def rules():
     global RULES
@@ -202,6 +206,10 @@ def handle_radarr_rule(rule, dry_run=False):
                     logging.info(f"Unmonitoring Radarr movie: {item['title']}")
                     item_id = item['id'] if rule['eventType'] == 'unmonitored' else item['movieId']
                     unmonitor_radarr_movie(item_id)
+                elif action == 'search':
+                    logging.info(f"Searching Radarr movie: {item['title']}")
+                    item_id = item['id'] if rule['eventType'] == 'unmonitored' else item['movieId']
+                    radarr_api_request('command', method='POST', json={'name': 'MoviesSearch', 'movieIds': [item_id]})
 
     return affected_items
 
@@ -222,7 +230,12 @@ def delete_radarr_movie(item_id):
 def handle_sonarr_rule(rule, dry_run=False):
     items = []
     if dry_run and rule['eventType'] == 'imported':
-        items = sonarr_api_request('series') or []
+        series_list = sonarr_api_request('series') or []
+        # Take a sample of series to avoid performance issues
+        sample_series = series_list[:5]
+        for series in sample_series:
+            episodes = sonarr_api_request(f'episode?seriesId={series["id"]}') or []
+            items.extend(episodes)
     elif rule['eventType'] in ['grabbed', 'downloaded', 'imported', 'failed']:
         items = (sonarr_api_request('queue') or {}).get('records', [])
     elif rule['eventType'] == 'missing':
@@ -268,6 +281,22 @@ def handle_sonarr_rule(rule, dry_run=False):
                     logging.info(f"Unmonitoring Sonarr series: {item['title']}")
                     item_id = item['id'] if rule['eventType'] == 'unmonitored' else item['seriesId']
                     unmonitor_sonarr_series(item_id)
+                elif action == 'search':
+                    logging.info(f"Searching Sonarr episode/series: {item['title']}")
+                    # For episodes (imported/grabbed/etc), we search for the episode.
+                    # For series level events (unmonitored?), we might want SeriesSearch, but let's stick to EpisodeSearch for now if we have an episode ID.
+                    # If it's a series level event, item['id'] might be seriesId.
+                    
+                    if rule['eventType'] == 'unmonitored':
+                         # This returns series, so we should probably do SeriesSearch
+                         sonarr_api_request('command', method='POST', json={'name': 'SeriesSearch', 'seriesId': item['id']})
+                    else:
+                        # Queue items or Episodes have 'episodeId' or 'id' depending on context.
+                        # Queue items: 'episodeId'
+                        # Library Episode items: 'id'
+                        episode_id = item.get('episodeId') or item.get('id')
+                        if episode_id:
+                             sonarr_api_request('command', method='POST', json={'name': 'EpisodeSearch', 'episodeIds': [episode_id]})
 
     return affected_items
 
@@ -340,8 +369,15 @@ def check_rule(rule, item, tag_map):
             return False
     elif event_type == 'grabbed' and status == 'pending':
         pass
-    elif event_type == 'imported' and status == 'completed' and tracked_download_status == 'ok':
-        pass
+    elif event_type == 'imported':
+        # Handle Queue Item
+        if status == 'completed' and tracked_download_status == 'ok':
+            pass
+        # Handle Library Episode (for preview)
+        elif item.get('hasFile') is True:
+            pass
+        else:
+            return False
     elif event_type == 'failed' and status == 'failed':
         pass
     elif event_type == 'missing' and monitored:
@@ -357,6 +393,43 @@ def check_rule(rule, item, tag_map):
         tag_id = tag_map.get(rule.get('tag'))
         if not tag_id or tag_id not in item.get('tags', []):
             return False
+
+    # Enhanced Checks
+    media_info = item.get('mediaInfo', {})
+    
+    # Video Codec
+    if rule.get('videoCodec'):
+        # Case insensitive partial match
+        if rule.get('videoCodec').lower() not in media_info.get('videoCodec', '').lower():
+            return False
+
+    # Audio Codec
+    if rule.get('audioCodec'):
+        # Case insensitive partial match
+        if rule.get('audioCodec').lower() not in media_info.get('audioCodec', '').lower():
+            return False
+
+    # Resolution
+    if rule.get('resolution'):
+        # Check against quality.quality.resolution (e.g. 1080) or mediaInfo.resolution
+        item_res = item.get('quality', {}).get('quality', {}).get('resolution')
+        if not item_res:
+             item_res = media_info.get('resolution')
+        
+        if str(rule.get('resolution')) != str(item_res):
+             return False
+
+    # File Size (in MB)
+    size_bytes = item.get('size') or item.get('movieFile', {}).get('size') or item.get('episodeFile', {}).get('size')
+    if size_bytes:
+        size_mb = size_bytes / (1024 * 1024)
+        if rule.get('minSize') and size_mb < float(rule.get('minSize')):
+            return False
+        if rule.get('maxSize') and size_mb > float(rule.get('maxSize')):
+            return False
+    elif rule.get('minSize') or rule.get('maxSize'):
+        # If size rule exists but item has no size, assume mismatch (or handle as needed)
+        return False
 
     return True
 
