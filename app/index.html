@@ -2,100 +2,84 @@
 <html>
 <head>
   <title>Reactarr</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
-    body { font-family: sans-serif; }
-    .rule-builder, .rules-list { margin-bottom: 20px; }
-    select, button { padding: 5px; }
+    body { padding-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>Reactarr</h1>
+  <div class="container">
+    <h1 class="mb-4">Reactarr</h1>
 
-  <div class="rule-builder">
-    <h2>Create a New Rule</h2>
-    <p>If
-      <select id="media-type">
-        <option value="episode">Episode</option>
-        <option value="movie">Movie</option>
-      </select>
-      is
-      <select id="event-type">
-        <option value="downloaded">Downloaded</option>
-        <option value="imported">Imported</option>
-      </select>
-      and status is
-      <select id="status">
-        <option value="waiting_for_import">Waiting for Import</option>
-        <option value="completed">Completed</option>
-      </select>
-      then
-      <select id="action">
-        <option value="delete">Delete</option>
-        <option value="notify">Notify</option>
-      </select>
-    </p>
-    <button onclick="addRule()">Add Rule</button>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="card-title">Create a New Rule</h2>
+        <div class="form-row">
+          <div class="form-group col-md-2">
+            <label for="media-type">If Media Is</label>
+            <select id="media-type" class="form-control">
+              <option value="episode">Episode</option>
+              <option value="movie">Movie</option>
+            </select>
+          </div>
+          <div class="form-group col-md-2">
+            <label for="event-type">And Event Is</label>
+            <select id="event-type" class="form-control">
+              <option value="downloaded">Downloaded</option>
+              <option value="imported">Imported</option>
+              <option value="grabbed">Grabbed</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <div class="form-group col-md-3">
+            <label for="status">And Status Is</label>
+            <select id="status" class="form-control">
+              <option value="waiting_for_import">Waiting for Import</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-group col-md-2">
+            <label for="quality-profile">And Quality Is</label>
+            <select id="quality-profile" class="form-control">
+              <option value="">Any</option>
+            </select>
+          </div>
+          <div class="form-group col-md-2">
+            <label for="tag">And Tag Is</label>
+            <select id="tag" class="form-control">
+              <option value="">Any</option>
+            </select>
+          </div>
+          <div class="form-group col-md-2">
+            <label for="action">Then Action Is</label>
+            <select id="action" class="form-control">
+              <option value="delete">Delete</option>
+              <option value="notify">Notify</option>
+            </select>
+          </div>
+          <div class="form-group col-md-3 align-self-end">
+            <button class="btn btn-primary btn-block" onclick="addRule()">Add Rule</button>
+            <button class="btn btn-secondary btn-block mt-2" onclick="previewRule()">Preview Rule</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4" id="preview-card" style="display: none;">
+      <div class="card-body">
+        <h2 class="card-title">Rule Preview</h2>
+        <ul id="preview-results" class="list-group"></ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title">Existing Rules</h2>
+        <ul id="rules" class="list-group"></ul>
+      </div>
+    </div>
   </div>
 
-  <div class="rules-list">
-    <h2>Existing Rules</h2>
-    <ul id="rules"></ul>
-  </div>
-
-  <script>
-    const mediaTypeEl = document.getElementById('media-type');
-    const eventTypeEl = document.getElementById('event-type');
-    const statusEl = document.getElementById('status');
-    const actionEl = document.getElementById('action');
-    const rulesListEl = document.getElementById('rules');
-
-    async function addRule() {
-      const rule = {
-        mediaType: mediaTypeEl.value,
-        eventType: eventTypeEl.value,
-        status: statusEl.value,
-        action: actionEl.value,
-      };
-
-      await fetch('/api/rules', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rule),
-      });
-
-      fetchRules();
-    }
-
-    async function fetchRules() {
-      const response = await fetch('/api/rules');
-      const data = await response.json();
-
-      rulesListEl.innerHTML = '';
-      if (data.rules.length === 0) {
-        rulesListEl.innerHTML = '<li>No rules yet.</li>';
-        return;
-      }
-
-      for (const rule of data.rules) {
-        const li = document.createElement('li');
-        li.textContent = `If ${rule.mediaType} is ${rule.eventType} and status is ${rule.status} then ${rule.action}`;
-
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.onclick = () => deleteRule(rule.id);
-
-        li.appendChild(deleteButton);
-        rulesListEl.appendChild(li);
-      }
-    }
-
-    async function deleteRule(ruleId) {
-      await fetch(`/api/rules/${ruleId}`, { method: 'DELETE' });
-      fetchRules();
-    }
-
-    // Fetch rules when the page loads
-    fetchRules();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>

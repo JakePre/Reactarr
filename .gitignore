@@ -30,3 +30,9 @@ wheels/
 
 # local settings
 local_settings.py
+
+# Reactarr rules
+config/rules.json
+
+# Log files
+app.log
