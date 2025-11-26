@@ -25,10 +25,12 @@
           <div class="form-group col-md-2">
             <label for="event-type">And Event Is</label>
             <select id="event-type" class="form-control">
-              <option value="downloaded">Downloaded</option>
-              <option value="imported">Imported</option>
-              <option value="grabbed">Grabbed</option>
-              <option value="failed">Failed</option>
+              <option value="grabbed">Grabbed (Sent to download client)</option>
+              <option value="downloaded">Downloaded (Finished downloading)</option>
+              <option value="imported">Imported (Added to library)</option>
+              <option value="failed">Failed (Download failed)</option>
+              <option value="missing">Missing (Episode is missing from disk)</option>
+              <option value="unmonitored">Unmonitored (No longer being monitored)</option>
             </select>
           </div>
           <div class="form-group col-md-3">
@@ -55,7 +57,16 @@
             <select id="action" class="form-control">
               <option value="delete">Delete</option>
               <option value="notify">Notify</option>
+              <option value="add_tag">Add Tag</option>
+              <option value="remove_tag">Remove Tag</option>
+              <option value="change_quality_profile">Change Quality Profile</option>
+              <option value="monitor">Monitor</option>
+              <option value="unmonitor">Unmonitor</option>
             </select>
+          </div>
+          <div class="form-group col-md-2" id="action-value-group" style="display: none;">
+            <label for="action-value">Value</label>
+            <select id="action-value" class="form-control"></select>
           </div>
           <div class="form-group col-md-3 align-self-end">
             <button class="btn btn-primary btn-block" onclick="addRule()">Add Rule</button>
@@ -76,6 +87,48 @@
       <div class="card-body">
         <h2 class="card-title">Existing Rules</h2>
         <ul id="rules" class="list-group"></ul>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Sonarr Library</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchSonarrLibrary()">Refresh</button>
+            <ul id="sonarr-library" class="list-group"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Radarr Library</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchRadarrLibrary()">Refresh</button>
+            <ul id="radarr-library" class="list-group"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Sonarr Wanted</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchSonarrWanted()">Refresh</button>
+            <ul id="sonarr-wanted" class="list-group"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Radarr Wanted</h2>
+            <button class="btn btn-primary mb-2" onclick="fetchRadarrWanted()">Refresh</button>
+            <ul id="radarr-wanted" class="list-group"></ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
