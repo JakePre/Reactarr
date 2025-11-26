@@ -6,6 +6,9 @@ import threading
 import time
 import logging
 from flask import Flask, jsonify, request, send_from_directory
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -155,11 +158,11 @@ def run_automations():
 def handle_radarr_rule(rule, dry_run=False):
     items = []
     if rule['eventType'] in ['grabbed', 'downloaded', 'imported', 'failed']:
-        items = radarr_api_request('queue').get('records', [])
+        items = (radarr_api_request('queue') or {}).get('records', [])
     elif rule['eventType'] == 'missing':
-        items = radarr_api_request('wanted/missing').get('records', [])
+        items = (radarr_api_request('wanted/missing') or {}).get('records', [])
     elif rule['eventType'] == 'unmonitored':
-        items = radarr_api_request('movie?monitored=false')
+        items = radarr_api_request('movie?monitored=false') or []
 
     tags = radarr_api_request('tag')
     tag_map = {tag['label']: tag['id'] for tag in tags} if tags else {}
@@ -218,12 +221,14 @@ def delete_radarr_movie(item_id):
 
 def handle_sonarr_rule(rule, dry_run=False):
     items = []
-    if rule['eventType'] in ['grabbed', 'downloaded', 'imported', 'failed']:
-        items = sonarr_api_request('queue').get('records', [])
+    if dry_run and rule['eventType'] == 'imported':
+        items = sonarr_api_request('series') or []
+    elif rule['eventType'] in ['grabbed', 'downloaded', 'imported', 'failed']:
+        items = (sonarr_api_request('queue') or {}).get('records', [])
     elif rule['eventType'] == 'missing':
-        items = sonarr_api_request('wanted/missing').get('records', [])
+        items = (sonarr_api_request('wanted/missing') or {}).get('records', [])
     elif rule['eventType'] == 'unmonitored':
-        items = sonarr_api_request('series?monitored=false')
+        items = sonarr_api_request('series?monitored=false') or []
 
     tags = sonarr_api_request('tag')
     tag_map = {tag['label']: tag['id'] for tag in tags} if tags else {}
